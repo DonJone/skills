@@ -132,7 +132,7 @@ const doc = new Document({
   styles: {
     default: {
       document: {
-        run: { font: fontSimSun, size: 24 }, // CRITICAL: 正文必须是小四号 (12pt = 24 half-points) 宋体
+        run: { font: fontSimSun, size: 28 }, // CRITICAL: 正文必须是四号 (14pt = 28 half-points) 宋体
         paragraph: {
           alignment: AlignmentType.JUSTIFIED,
           spacing: { line: 360, lineRule: "auto" } // 1.5倍行距
@@ -181,12 +181,20 @@ const doc = new Document({
 
 **3. Additional Formatting Rules**
 - **Lists under Heading 3**: Numbered as (1), (2) then a, b. Use 小四号宋体 (size: 24).
-- **Figures (插图)**: Numbered by chapter ("图 1—1"). Title below image, centered, 五号宋体 (10.5pt, `size: 21`). Note: English text/numbers in title must be Times New Roman.
-- **Tables (三线表)**: Numbered by chapter ("表 2—1"). Title ABOVE table, centered. Table number is 五号 Times New Roman (`size: 21`), Table title is 五号宋体 (`size: 21`). MUST use SINGLE/thick top and bottom borders, and NO vertical borders.
+- **Figures (插图)**: 
+  - Numbered by chapter ("图 1—1"). Sub-figures use (a), (b).
+  - Title is BELOW the image, centered, in 五号宋体 (10.5pt, `size: 21`).
+  - Citations/sources should be marked as a superscript at the top right of the figure title.
+  - Text *inside* the figure itself (charts, axes, etc.) must be **小五号** (9pt = `size: 18`).
+- **Tables (三线表)**: 
+  - Numbered by chapter ("表 2—1"). Title ABOVE table, centered. Table number is 五号 Times New Roman (`size: 21`), title is 五号宋体 (`size: 21`).
+  - MUST use SINGLE/thick top and bottom borders, NO vertical borders.
+  - If the table is cited from elsewhere, note the source directly BELOW the table.
+  - Table footnotes (details inside the table) use ①, ② in superscript.
 - **References**: Title "参考文献" is 黑体三号 (`size: 32`), centered. Entries are 五号宋体 (`size: 21`), numbered [1], [2]...
-- **Footnotes**: Bottom of the page, 五号宋体 (`size: 21`). Numbered ①, ②...
-- **Formulas**: New line, centered, number aligned to the right.
-- **Numbers/Symbols**: Do NOT use [1][2] or ①② in standard body paragraphs.
+- **Footnotes**: Bottom of the page, 五号宋体 (`size: 21`). Numbered continuously as ①, ②, ③. (Override default numbering format if necessary).
+- **Formulas**: New line, centered. Formula number like "(2—3)" aligned to the right (use Tab Stops).
+- **Numbers/Symbols**: Do NOT use [1][2] or ①② in standard body paragraphs to avoid confusing with citations.
 
 ### Lists (NEVER use unicode bullets)
 
