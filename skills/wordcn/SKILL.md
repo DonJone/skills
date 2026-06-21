@@ -143,7 +143,7 @@ const doc = new Document({
       {
         id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal",
         run: { font: fontSimHei, size: 30, bold: true }, // 一级标题: 小三号黑体
-        paragraph: { alignment: AlignmentType.CENTER, spacing: { before: 360, after: 240, line: 360 }, pageBreakBefore: true }
+        paragraph: { alignment: AlignmentType.CENTER, spacing: { before: 360, after: 240, line: 360 } } // 禁用了 pageBreakBefore 避免黑点
       },
       {
         id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal",
@@ -180,6 +180,7 @@ const doc = new Document({
 ```
 
 **3. Additional Formatting Rules**
+- **Chapter Pagination (CRITICAL)**: Do NOT use `pageBreakBefore` in styles to prevent Word formatting marks (black dots). Instead, you MUST manually insert a page break paragraph `new Paragraph({ children: [new PageBreak()] })` immediately before every Heading 1.
 - **Lists under Heading 3**: Numbered as (1), (2) then a, b. Use 小四号宋体 (size: 24).
 - **Figures (插图)**: 
   - Numbered by chapter ("图 1—1"). Sub-figures use (a), (b).
