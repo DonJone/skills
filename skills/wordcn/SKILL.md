@@ -80,17 +80,18 @@ python scripts/office/validate.py doc.docx
 ### Page Size
 
 ```javascript
-// CRITICAL: Use A4 size as it is the standard in China
-// docx-js defaults to A4, but always set page size explicitly for consistent results
+// CRITICAL: Use A4 size and Chinese academic margins
+const pageSettings = {
+  size: {
+    width: 11906,   // A4 width in DXA
+    height: 16838   // A4 height in DXA
+  },
+  margin: { top: 1440, bottom: 1440, left: 1797, right: 1797 } // Top/Bottom 2.54cm, Left/Right 3.17cm
+};
+
 sections: [{
   properties: {
-    page: {
-      size: {
-        width: 11906,   // A4 width in DXA
-        height: 16838   // A4 height in DXA
-      },
-      margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } // 1 inch margins
-    }
+    page: pageSettings
   },
   children: [/* content */]
 }]
@@ -113,31 +114,79 @@ size: {
 // Content width = 16838 - left margin - right margin (uses the long edge)
 ```
 
-### Styles (Override Built-in Headings)
+### Styles & Chinese Academic Thesis Standards (核心排版约束)
 
-For Chinese localization, use "Microsoft YaHei" (微软雅黑) for a modern sans-serif look, or "SimSun" (宋体) for a traditional serif look as the default font. Keep titles black for readability. Set alignment to JUSTIFIED for Chinese paragraphs.
+**CRITICAL CONSTRAINT**: You MUST use these exact styles. Do not use generic English defaults.
 
+**1. Font Configuration**
+- Chinese text must use **SimSun** (宋体) for body and **SimHei** (黑体) for headings.
+- English text and numbers must use **Times New Roman**.
+```javascript
+const fontSimSun = { name: "SimSun", ascii: "Times New Roman", hAnsi: "Times New Roman", eastAsia: "SimSun" };
+const fontSimHei = { name: "SimHei", ascii: "Times New Roman", hAnsi: "Times New Roman", eastAsia: "SimHei" };
+```
+
+**2. Document Styles Setup**
 ```javascript
 const doc = new Document({
   styles: {
-    default: { document: { run: { font: "Microsoft YaHei", size: 24 }, paragraph: { alignment: AlignmentType.JUSTIFIED } } }, // 12pt default
+    default: {
+      document: {
+        run: { font: fontSimSun, size: 24 }, // CRITICAL: 正文必须是小四号 (12pt = 24 half-points) 宋体
+        paragraph: {
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { line: 360, lineRule: "auto" } // 1.5倍行距
+        }
+      }
+    },
     paragraphStyles: [
-      // IMPORTANT: Use exact IDs to override built-in styles
-      { id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal", quickFormat: true,
-        run: { size: 32, bold: true, font: "Microsoft YaHei" },
-        paragraph: { spacing: { before: 240, after: 240 }, outlineLevel: 0 } }, // outlineLevel required for TOC
-      { id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal", quickFormat: true,
-        run: { size: 28, bold: true, font: "Microsoft YaHei" },
-        paragraph: { spacing: { before: 180, after: 180 }, outlineLevel: 1 } },
+      {
+        id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal",
+        run: { font: fontSimHei, size: 30, bold: true }, // 一级标题: 小三号黑体
+        paragraph: { alignment: AlignmentType.CENTER, spacing: { before: 360, after: 240, line: 360 }, pageBreakBefore: true }
+      },
+      {
+        id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal",
+        run: { font: fontSimHei, size: 28, bold: true }, // 二级标题: 四号黑体
+        paragraph: { spacing: { before: 120, after: 120 } }
+      },
+      {
+        id: "Heading3", name: "Heading 3", basedOn: "Normal", next: "Normal",
+        run: { font: fontSimHei, size: 28, bold: true }, // 三级标题: 四号黑体
+        paragraph: { spacing: { before: 48, after: 48 } }
+      },
+      {
+        id: "ReferenceTitle", name: "Reference Title", basedOn: "Normal",
+        run: { font: fontSimHei, size: 32, bold: true }, // 参考文献标题: 三号黑体
+        paragraph: { alignment: AlignmentType.CENTER, spacing: { before: 240, after: 240 } }
+      }
     ]
   },
   sections: [{
-    children: [
-      new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("Title")] }),
-    ]
+    properties: { page: pageSettings },
+    footers: {
+      default: new Footer({
+        children: [
+          new Paragraph({
+            alignment: AlignmentType.RIGHT, // 页码位于页面底端右侧
+            children: [new TextRun({ children: [PageNumber.CURRENT] })]
+          })
+        ]
+      })
+    },
+    children: [ /* content */ ]
   }]
 });
 ```
+
+**3. Additional Formatting Rules**
+- **Lists under Heading 3**: Numbered as (1), (2) then a, b. Use 小四号宋体 (size: 24).
+- **Figures (插图)**: Numbered by chapter ("图 1—1"). Title below image, centered, 五号宋体 (10.5pt, `size: 21`). Note: English text/numbers in title must be Times New Roman.
+- **Tables (三线表)**: Numbered by chapter ("表 2—1"). Title ABOVE table, centered. Table number is 五号 Times New Roman (`size: 21`), Table title is 五号宋体 (`size: 21`). MUST use SINGLE/thick top and bottom borders, and NO vertical borders.
+- **References**: Title "参考文献" is 黑体三号 (`size: 32`), centered. Entries are 五号宋体 (`size: 21`), numbered [1], [2]...
+- **Footnotes**: Bottom of the page, 五号宋体 (`size: 21`). Numbered ①, ②...
+- **Formulas**: New line, centered, number aligned to the right.
+- **Numbers/Symbols**: Do NOT use [1][2] or ①② in standard body paragraphs.
 
 ### Lists (NEVER use unicode bullets)
 
@@ -375,96 +424,7 @@ sections: [{
 }]
 ```
 
-### Chinese Academic Thesis Standards (中国学位论文/学术报告标准排版)
 
-When generating academic reports, papers, or thesis documents for Chinese universities, use these exact specifications:
-
-```javascript
-// 1. Page Settings (A4, Margins: Top/Bottom 2.54cm, Left/Right 3.17cm)
-// 1 inch = 1440 DXA. 2.54cm = 1 inch = 1440 DXA. 3.17cm = 1.25 inch = 1797 DXA.
-const pageSettings = {
-  size: { width: 11906, height: 16838 },
-  margin: { top: 1440, bottom: 1440, left: 1797, right: 1797 } // 装订线0cm已包含在内
-};
-
-// 2. Font configuration
-// Chinese = SimSun (宋体) or SimHei (黑体)
-// English/Numbers = Times New Roman
-const fontSimSun = { name: "SimSun", ascii: "Times New Roman", hAnsi: "Times New Roman", eastAsia: "SimSun" };
-const fontSimHei = { name: "SimHei", ascii: "Times New Roman", hAnsi: "Times New Roman", eastAsia: "SimHei" };
-
-const doc = new Document({
-  styles: {
-    default: {
-      document: {
-        run: { font: fontSimSun, size: 28 }, // 正文: 四号 (14pt = 28 half-points)
-        paragraph: {
-          alignment: AlignmentType.JUSTIFIED,
-          spacing: { line: 360, lineRule: "auto" } // 1.5倍行距 (1.5 * 240)
-        }
-      }
-    },
-    paragraphStyles: [
-      {
-        id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal",
-        run: { font: fontSimHei, size: 30, bold: true }, // 一级标题: 小三号 (15pt) 黑体
-        paragraph: {
-          alignment: AlignmentType.CENTER,
-          spacing: { before: 360, after: 240, line: 360 }, // 上空1.5行，下空1行
-          pageBreakBefore: true // 每个章节结束后需另起一页
-        }
-      },
-      {
-        id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal",
-        run: { font: fontSimHei, size: 28, bold: true }, // 二级标题: 四号 (14pt) 黑体
-        paragraph: { spacing: { before: 120, after: 120 } } // 段前段后0.5行 (0.5 * 240 = 120)
-      },
-      {
-        id: "Heading3", name: "Heading 3", basedOn: "Normal", next: "Normal",
-        run: { font: fontSimHei, size: 28, bold: true }, // 三级标题: 四号 (14pt) 黑体
-        paragraph: { spacing: { before: 48, after: 48 } } // 段前段后0.2行 (0.2 * 240 = 48)
-      },
-      {
-        id: "ReferenceTitle", name: "Reference Title", basedOn: "Normal",
-        run: { font: fontSimHei, size: 32, bold: true }, // 参考文献标题: 三号 (16pt) 黑体
-        paragraph: { alignment: AlignmentType.CENTER, spacing: { before: 240, after: 240 } }
-      }
-    ]
-  },
-  sections: [{
-    properties: {
-      page: pageSettings,
-    },
-    footers: {
-      default: new Footer({
-        children: [
-          new Paragraph({
-            alignment: AlignmentType.RIGHT, // 页码位于页面底端右侧
-            children: [new TextRun({ children: [PageNumber.CURRENT] })]
-          })
-        ]
-      })
-    },
-    children: [ /* content */ ]
-  }]
-});
-```
-
-**Additional Formatting Rules:**
-- **Lists under Heading 3**: Numbered as (1), (2) then a, b. Use 小四号宋体 (size: 24).
-- **Figures (插图)**: 
-  - Numbered by chapter (e.g., "图 1—1"). Follows sequence (a), (b) for sub-figures.
-  - Figure title is below the image, centered, in 五号宋体 (10.5pt, size: 21). Note: English text/numbers in title must be Times New Roman.
-- **Tables (三线表 - Three-line tables)**:
-  - Numbered by chapter (e.g., "表 2—1"). Title is ABOVE the table, centered.
-  - Table number is 五号 Times New Roman (size: 21), Table title is 五号宋体 (size: 21).
-  - Table design MUST be a three-line table (三线表): Set top and bottom border of the table to SINGLE/thick, and remove all vertical borders.
-- **References (参考文献)**: 
-  - Title "参考文献" is 黑体三号 (SimHei 16pt, size: 32), centered.
-  - Entries are 五号宋体 (size: 21), numbered sequentially as [1], [2], [3]...
-- **Footnotes (脚注)**: Placed at the bottom of the page, 五号宋体 (size: 21). Numbered as ①, ②, ③.
-- **Formulas (公式)**: Write on a new line, centered, with the formula number (e.g., "(2—3)") aligned to the right (use Tab Stops).
-- **Numbers/Symbols**: Do not use [1][2] or ①② in standard body paragraphs to avoid confusing with footnotes or references.
 
 ### Critical Rules for docx-js
 
